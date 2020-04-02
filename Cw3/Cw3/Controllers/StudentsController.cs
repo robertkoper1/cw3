@@ -9,104 +9,74 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Cw3.Controllers
 {
-    [Route("api/students")]
     [ApiController]
-    public class StudentsController : ControllerBase
+    [Route("api/students")]
+
+    public class StudentController : ControllerBase
     {
         private readonly IDbService _dbService;
-        private const string ConString = "Data Source=db-mssql;Initial Catalog=s18645;Integrated Security=True";
 
-        public StudentsController(IDbService dbService)
+        public StudentController(IDbService dbService)
         {
             _dbService = dbService;
         }
 
-
         [HttpGet]
         public IActionResult GetStudents()
         {
-            var listStudents = new List<Student>();
-            using (var con = new SqlConnection(ConString))
+            var students = new List<Student>();
+            using (var client = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18645;Integrated Security=True"))
             using (var com = new SqlCommand())
             {
-                com.Connection = con;
-                com.CommandText = "select * from student";
+                com.Connection = client;
+                com.CommandText = "Select FirstName, LastName, IndexNumber, Name, Semester from Student " +
+                    "Inner Join Enrollment on Enrollment.IdEnrollment = Student.IdEnrollment " +
+                    "Inner Join Studies on Studies.IdStudy = Enrollment.IdStudy";
 
-                con.Open();
-                SqlDataReader dataReader = com.ExecuteReader();
-
-                while (dataReader.Read())
+                client.Open();
+                var dr = com.ExecuteReader();
+                while (dr.Read())
                 {
                     var st = new Student();
-
-                    if (dataReader["IndexNumber"] != DBNull.Value)
-                        st.IndexNumber = dataReader["IndexNumber"].ToString();
-
-                    if (dataReader["FirstName"] != DBNull.Value)
-                        st.IndexNumber = dataReader["FirstName"].ToString();
-
-                    if (dataReader["LastName"] != DBNull.Value)
-                        st.IndexNumber = dataReader["LastName"].ToString();
-
-                    if (dataReader["BirthDate"] != DBNull.Value)
-                        st.IndexNumber = dataReader["BirthDate"].ToString();
-
-                    if (dataReader["IdEnrollment"] != DBNull.Value)
-                        st.IndexNumber = dataReader["IdEnrollment"].ToString();
-
-                    listStudents.Add(st);
+                    st.FirstName = dr["FirstName"].ToString();
+                    st.LastName = dr["LastName"].ToString();
+                    st.IndexNumber = dr["IndexNumber"].ToString();
+                    st.Studies_name = dr["Name"].ToString();
+                    st.Semester = dr["Semester"].ToString();
+                    students.Add(st);
                 }
             }
-
-                return Ok(listStudents);
+            return Ok(students);
         }
-
-
-        [HttpGet("{indexNumber}")]
-        public IActionResult GetStudents(string indexNumber)
+        [HttpGet("{id}")]
+        public IActionResult GetStudents(String id)
         {
-
-
-            using (var con = new SqlConnection(ConString))
+            var enrollmentList = new List<Enrollment>();
+            using (var client = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18645;Integrated Security=True"))
             using (var com = new SqlCommand())
             {
-                com.Connection = con;
-                com.CommandText = "select * from student where IndexNumber=@IndexNumber";
-                com.Parameters.AddWithValue("IndexNumber", indexNumber);
+                com.Connection = client;
 
+                com.CommandText = "Select Name, Semester, StartDate from Student " +
+                "Inner Join Enrollment on Student.IdEnrollment = Enrollment.IdEnrollment " +
+                "Inner Join Studies on Enrollment.IdStudy = Studies.IdStudy " +
+                "Where Student.IndexNumber=@id";
 
-                con.Open();
-                var dataReader = com.ExecuteReader();
-                if (dataReader.Read())
+                com.Parameters.AddWithValue("id", id);
+
+                client.Open();
+                var dr = com.ExecuteReader();
+                while (dr.Read())
                 {
-
-                    var st = new Student();
-
-                    if (dataReader["IndexNumber"] != DBNull.Value)
-                        st.IndexNumber = dataReader["IndexNumber"].ToString();
-
-                    if (dataReader["FirstName"] != DBNull.Value)
-                        st.FirstName = dataReader["FirstName"].ToString();
-
-                    if (dataReader["LastName"] != DBNull.Value)
-                        st.LastName = dataReader["LastName"].ToString();
-
-                    if (dataReader["BirthDate"] != DBNull.Value)
-                        st.BirthDate = DateTime.Parse(dataReader["BirthDate"].ToString());
-
-                    if (dataReader["IdEnrollment"] != DBNull.Value)
-                        st.IdEnrollment = int.Parse(dataReader["IdEnrollment"].ToString());
-
-                    return Ok(st);
+                    var enr = new Enrollment();
+                    enr.Name = dr["Name"].ToString();
+                    enr.Semester = dr["Semester"].ToString();
+                    enr.StartDate = DateTime.Parse(dr["StartDate"].ToString());
+                    enrollmentList.Add(enr);
                 }
-
             }
-            return NotFound("Student nie znaleziony");
+            return Ok(enrollmentList);
         }
-
-
-
-
 
 
         [HttpPost]
