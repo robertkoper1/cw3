@@ -11,6 +11,32 @@ namespace Cw3.DAL
 {
     class SQLDbService : Controller, IDbService
     {
+        public bool CheckIndex(string index)
+        {
+            using (var client = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18645;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = client;
+                client.Open();
+                try { 
+                com.CommandText = "select * from student where IndexNumber = @IndexNumber ";
+                com.Parameters.AddWithValue("IndexNumber", index);
+                var dr = com.ExecuteReader();
+                    if (!dr.Read())
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }catch(Exception e)
+                {
+                    return false;
+                }
+            }
+        }
+
         public IActionResult EnrollStudent(EnrollStudentRequest esr)
         {
             using (var client = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18645;Integrated Security=True"))
@@ -65,9 +91,12 @@ namespace Cw3.DAL
                 catch (SqlException)
                 {
                     transaction.Rollback();
+                    return BadRequest();
                 }
+                return Ok();
             }
         }
+       
         public IEnumerable<Student> GetStudents()
         {
             throw new NotImplementedException();

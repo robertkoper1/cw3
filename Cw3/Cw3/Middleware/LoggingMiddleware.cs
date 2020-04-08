@@ -33,8 +33,21 @@ namespace Cw3.Middleware
                     bodyStr = await reader.ReadToEndAsync();
                     context.Request.Body.Position = 0;
                 }
-            
-                    
+
+                FileStream fs = null;
+                if (File.Exists("requestLog.txt")) {
+                    fs = new FileStream("requestLog.txt", FileMode.Append);
+                }
+                else
+                {
+                    fs = new FileStream("requestLog.txt", FileMode.Create);
+                }
+
+                var sw = new StreamWriter(fs);
+                sw.Write("Path: " + path + " Method: " + method + " queryString: " + queryString+" bodyStr: " + bodyStr+"\n");
+
+                sw.Close();
+                fs.Close();
             }
 
 

@@ -54,11 +54,14 @@ namespace Cw3
 
                 String index = context.Request.Headers["Index"].ToString();
 
-
-                //if (!dbService.CheckIndex(index))
-                //{
-                    //poinformowaæ u¿ytkownika o nieistniej¹cym studencie
-                //}
+               
+               if (!dbService.CheckIndex(index))
+               {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    await context.Response.WriteAsync("Bad index");
+                    return;
+               }
+               
 
                 await next();
             });
